@@ -41,8 +41,9 @@ load_file(Config) ->
                     end
                 end,
             Ret = lists:foldl(Fun, [], FieldData),
-            {list_to_binary(erl_hash:md5(term_to_binary(AllData))), lists:reverse(Ret), AllData};
-        _Other -> erlang:throw({'EXIT', {"read ", Config, "sql err:", _Other}})
+            {lists:reverse(Ret), AllData};
+        _Other ->
+            erlang:throw({'EXIT', {"read ", Config, "sql err:", _Other}})
     end.
 
 

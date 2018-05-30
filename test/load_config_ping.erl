@@ -21,7 +21,6 @@ load_cache() ->
         #cache_mate{
             name = ping_config,
             record = #ping_config{},
-            file = "ping_config",
             fields = record_info(fields, ping_config),
             all = [#ping_config.id, #ping_config.point],
             group = [#ping_config.id, #ping_config.point],
@@ -31,7 +30,6 @@ load_cache() ->
         #cache_mate{
             name = ping_test,
             record = #ping_test{},
-            file = "ping_config",
             fields = record_info(fields, ping_test),
             verify = fun verify_ping_config/1
         }

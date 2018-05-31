@@ -21,11 +21,11 @@ start_link(CacheConfig) ->
 
 
 init(CacheConfig) ->
+    cache_behaviour:init(CacheConfig),
     if
         CacheConfig#cache_mate.record =:= none ->
             ok;
         true ->
-            cache_behaviour:init(CacheConfig),
             case catch cache_behaviour:load_file(CacheConfig) of
                 {FileRecords, AllData} ->
                     cache_behaviour:cache_data(CacheConfig, FileRecords, AllData);

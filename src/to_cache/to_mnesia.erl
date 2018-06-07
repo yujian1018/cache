@@ -11,12 +11,17 @@
 
 -export([
     init/1,
-    cache_data/3
+    set/2,
+    cache_data/4
 ]).
 
-init(_CacheConfig) ->
-%%    ?mnesia_new(CacheConfig#cache_mate.name, CacheConfig#cache_mate.table_type).
-    ok.
 
-cache_data(_CacheConfig, FileRecords, _AllData) ->
-    [mnesia:dirty_write(Record) || Record <- FileRecords].
+init(Config) ->
+    ?mnesia_new(Config#cache_mate.name, Config#cache_mate.cache_copies, Config#cache_mate.type, Config#cache_mate.fields, Config#cache_mate.index).
+
+
+%% @doc 同时插入两张表的情况
+set(_Config, Items) -> [mnesia:dirty_write(Item) || Item <- Items].
+
+
+cache_data(_CacheConfig, _Md5, _FileRecords, _AllData) -> ok.

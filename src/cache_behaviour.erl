@@ -13,18 +13,30 @@
 -export([
     init/1,
     load_file/1,
-    cache_data/3
+    set/2,
+    cache_data/4
 ]).
 
-init(CacheConfig) when CacheConfig#cache_mate.cache_type =:= ets -> to_ets:init(CacheConfig);
-init(CacheConfig) when CacheConfig#cache_mate.cache_type =:= mnesia -> to_mnesia:init(CacheConfig).
+
+init(Config) when Config#cache_mate.store =:= ets ->
+    ?put(cache_behaviour_mod, to_ets),
+    to_ets:init(Config);
+init(Config) when Config#cache_mate.store =:= mnesia ->
+    ?put(cache_behaviour_mod, to_mnesia),
+    to_mnesia:init(Config).
 
 
-load_file(CacheConfig) when CacheConfig#cache_mate.type =:= mysql ->
-    aof_mysql:load_file(CacheConfig).
+load_file(Config) when Config#cache_mate.db_type =:= mysql ->
+    if
+        Config#cache_mate.fields =:= none -> ok;
+        true ->
+            aof_mysql:load_file(Config)
+    end.
 
 
-cache_data(CacheConfig, FileRecords, AllData) when CacheConfig#cache_mate.cache_type =:= ets ->
-    to_ets:cache_data(CacheConfig, FileRecords, AllData);
-cache_data(CacheConfig, FileRecords, AllData) when CacheConfig#cache_mate.cache_type =:= mnesia ->
-    to_mnesia:cache_data(CacheConfig, FileRecords, AllData).
+set(Config, Items) ->
+    (?get(cache_behaviour_mod)):set(Config, Items).
+
+
+cache_data(Config, Md5, FileRecords, AllData) ->
+    (?get(cache_behaviour_mod)):cache_data(Config, Md5, FileRecords, AllData).

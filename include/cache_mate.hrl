@@ -10,20 +10,20 @@
 -define(cache_tab_md5, cache_tab_md5).
 
 -record(cache_mate, {
-    cache_type = ets,           %ets || mnesia
+    store = ets :: ets | mnesia,
     name = none :: atom(),
-    record = none :: tuple(),       % 默认建立ets表;当有值时，读取数据
-    table_type = set :: set|bag,
+    type = set :: set|bag,
     key_pos = 2 :: integer(),
     
+    index = [],
     cache_copies = disc_copies :: disc_copies|disc_only_copies|ram_copies,
+    fields = none :: list(),
     
-    type = mysql :: atom(), %文件类型， mysql、txt、json、xml、excle
+    db_type = mysql :: atom(), %文件类型， mysql、txt、json、xml、excle
     mysql_pool = pool_static_1 :: atom(),
-    fields :: list(),
     
-    rewrite = none :: fun(),    %数据格式重写
-    verify = none :: fun(),  %fun() -> boolean().
+    rewrite = fun(I) -> I end :: fun(),    %数据格式重写
+    verify = fun(I) -> I end :: fun(),  %fun() -> boolean().
     
     all = [2] :: [integer()], %默认把该表的所有key值维护去来，用来热更数据时使用
     group = [] :: [integer()],   %

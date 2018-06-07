@@ -11,33 +11,37 @@
 
 -export([
     init/1,
-    cache_data/3
+    set/2,
+    cache_data/4
 ]).
 
 init(CacheConfig) ->
-    ?ets_new(CacheConfig#cache_mate.name, CacheConfig#cache_mate.key_pos, CacheConfig#cache_mate.table_type).
+    ?ets_new(CacheConfig#cache_mate.name, CacheConfig#cache_mate.key_pos, CacheConfig#cache_mate.type).
 
 
-cache_data(CacheConfig, FileRecords, AllData) ->
+set(Config, Items) -> ets:insert(Config#cache_mate.name, Items).
+
+
+cache_data(Config, Md5, FileRecords, AllData) ->
     Md5 = erl_hash:md5_to_bin(term_to_binary(AllData)),
-    All = cache_all_data(CacheConfig, FileRecords),
+    All = cache_all_data(Config, FileRecords),
     DelIds =
         case All of
             [] -> [];
             [{_Name, Key, V} | _R] ->
-                case ets:lookup(CacheConfig#cache_mate.name, Key) of
+                case ets:lookup(Config#cache_mate.name, Key) of
                     [] -> [];
                     [{_, _, V2}] -> V2 -- V
                 end
         end,
-    Group = cache_group_data(CacheConfig, FileRecords),
+    Group = cache_group_data(Config, FileRecords),
     
-    ets:insert(CacheConfig#cache_mate.name, lists:flatten([All, Group, FileRecords])),
-    ets:insert(CacheConfig#cache_mate.name, {CacheConfig#cache_mate.name, table_data, AllData}),
-    gen_server:call(?cache_tab_md5, {reset_md5, CacheConfig#cache_mate.name, Md5}),
+    ets:insert(Config#cache_mate.name, lists:flatten([All, Group])),
+    ets:insert(Config#cache_mate.name, {Config#cache_mate.name, table_data, AllData}),
+    gen_server:call(?cache_tab_md5, {reset_md5, Config#cache_mate.name, Md5}),
     case DelIds of
         [] -> ok;
-        DelIds -> lists:map(fun(Id) -> ets:delete(CacheConfig#cache_mate.name, Id) end, DelIds)
+        DelIds -> lists:map(fun(Id) -> ets:delete(Config#cache_mate.name, Id) end, DelIds)
     end.
 
 

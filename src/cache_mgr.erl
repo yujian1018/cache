@@ -22,17 +22,7 @@ start_link(CacheConfig) ->
 
 init(CacheConfig) ->
     cache_behaviour:init(CacheConfig),
-    if
-        CacheConfig#cache_mate.record =:= none ->
-            ok;
-        true ->
-            case catch cache_behaviour:load_file(CacheConfig) of
-                {FileRecords, AllData} ->
-                    cache_behaviour:cache_data(CacheConfig, FileRecords, AllData);
-                _Cache ->
-                    ?ERROR("load_file err:~p~n", [_Cache])
-            end
-    end,
+    cache_behaviour:load_file(CacheConfig),
     ?INFO("config table:~p load done~n", [CacheConfig#cache_mate.name]),
     {ok, #{config => CacheConfig}}.
 
@@ -56,15 +46,8 @@ handle_call({reset_cache, ConfigVO}, _From, State) ->
                 {'EXIT', Catch} ->
                     ?ERROR("reset_cache load_file err:~p~n", [Catch]),
                     {error, Catch};
-                {NewFileRecords, AllData} ->
-                    %% @doc 重新加载数据
-                    case catch cache_behaviour:cache_data(ConfigVO, NewFileRecords, AllData) of
-                        {'EXIT', Catch} ->
-                            ?ERROR("reset_cache cache_data error:~p~n", [Catch]),
-                            {error, Catch};
-                        _ ->
-                            ok
-                    end
+                _ ->
+                    ok
             end,
     {reply, Reply, State};
 

@@ -1,6 +1,6 @@
 %%%-------------------------------------------------------------------
 %%% @author yujian
-%%% @doc
+%%% @doc  ets表中all_data不能超过5w条数据
 %%% Created : 26. 十一月 2015 下午5:46
 %%%-------------------------------------------------------------------
 -module(aof_mysql).
@@ -9,47 +9,13 @@
 -include("cache_pub.hrl").
 
 
+-define(PAGE_SIZE, 10000).
+
 -export([load_file/1]).
 
 load_file(Config) ->
-    case ?rpc_db_call(db_mysql, execute, [Config#cache_mate.mysql_pool, sql(Config)]) of
-        [AllData, FieldData] ->
-            Fun =
-                fun(Line, Acc) ->
-                    TabVO = check_field(Config, Line),
-                    NewTabVO =
-                        case Config#cache_mate.rewrite of
-                            none -> TabVO;
-                            FunRewrite ->
-                                case catch FunRewrite(TabVO) of
-                                    {'EXIT', E} -> erlang:throw({'EXIT', {Config, "rewrite err:", E}});
-                                    VO -> VO
-                                end
-                        end,
-                    NewTabVO2 = case Config#cache_mate.verify of
-                                    none -> NewTabVO;
-                                    FunVerify ->
-                                        case catch FunVerify(NewTabVO) of
-                                            true -> NewTabVO;
-                                            _Catch -> erlang:throw({'EXIT', {Config, "verify err:", NewTabVO, _Catch}})
-                                        end
-                                end,
-                    if
-                        is_tuple(NewTabVO2) -> [NewTabVO2 | Acc];
-                        is_list(NewTabVO2) -> NewTabVO2 ++ Acc;
-                        true -> Acc
-                    end
-                end,
-            Ret = lists:foldl(Fun, [], FieldData),
-            {lists:reverse(Ret), AllData};
-        _Other ->
-            erlang:throw({'EXIT', {"read ", Config, "sql err:", _Other}})
-    end.
-
-
-sql(Config) ->
     Tab = atom_to_binary(Config#cache_mate.name, unicode),
-    SelectBin =
+    Sel =
         lists:foldl(fun(Field, SelectAcc) ->
             FieldBin = atom_to_binary(Field, unicode),
             if
@@ -59,23 +25,55 @@ sql(Config) ->
                     end,
             <<>>,
             Config#cache_mate.fields),
-    <<"SELECT * FROM ", Tab/binary, ";SELECT ", SelectBin/binary, " FROM ", Tab/binary, ";">>.
+    Md5Context = erlang:md5_init(),
+    {Md5, FieldRecords, AllData} = tab(Config, Tab, Sel, 0, Md5Context),
+    cache_behaviour:cache_data(Config, Md5, FieldRecords, AllData).
 
 
-check_field(Config, Line) ->
-    TabFieldLen = length(Config#cache_mate.fields),
-    LineLen = length(Line),
-    if
-        TabFieldLen =:= LineLen ->
-            {_, Ret} =
-                lists:foldl(
-                    fun(I, {Index, Record}) ->
-                        {Index + 1, setelement(Index, Record, I)}
-                    end,
-                    {2, Config#cache_mate.record},
-                    Line),
-            Ret;
-        true ->
-            erlang:throw({Config, "fields bad match:", Config})
+tab(Config, Tab, Sel, N, Md5Context) ->
+    SIndex =
+        if
+            N >= 1 -> N * ?PAGE_SIZE + 1;
+            true -> 0
+        end,
+    Sql =
+        if
+            Config#cache_mate.store =:= mnesia ->
+                <<"SELECT '';
+            select ", Sel/binary, " from ", Tab/binary, " limit ", (integer_to_binary(SIndex))/binary, ", ", (integer_to_binary(?PAGE_SIZE))/binary, ";">>;
+            true ->
+                <<"select * from ", Tab/binary, " limit ", (integer_to_binary(SIndex))/binary, ", ", (integer_to_binary(?PAGE_SIZE))/binary, ";
+          select ", Sel/binary, " from ", Tab/binary, " limit ", (integer_to_binary(SIndex))/binary, ", ", (integer_to_binary(?PAGE_SIZE))/binary, ";">>
+        end,
+    case db_mysql:execute(Config#cache_mate.mysql_pool, Sql) of
+        [AllData, FieldData] ->
+            Len = length(FieldData),
+            {NewMd5Context, FieldRecords} = cache_data(Config, AllData, Md5Context, FieldData),
+            if
+                Len < ?PAGE_SIZE ->
+                    {erlang:md5_final(NewMd5Context), FieldRecords, AllData};
+                true ->
+                    tab(Config, Tab, Sel, N + 1, NewMd5Context)
+            end;
+        _ -> ok
     end.
 
+
+cache_data(Config, AllData, Md5Context, Data) ->
+    Fun =
+        fun(Item, Acc) ->
+            TabRecord = list_to_tuple([Config#cache_mate.name | Item]),
+            TabRecord2 = (Config#cache_mate.rewrite)(TabRecord),
+            TabRecord3 = (Config#cache_mate.verify)(TabRecord2),
+            if
+                is_tuple(TabRecord3) ->
+                    cache_behaviour:set(Config, [TabRecord3]),
+                    [TabRecord3 | Acc];
+                is_list(TabRecord3) ->
+                    cache_behaviour:set(Config, TabRecord3),
+                    TabRecord3 ++ Acc;
+                true ->
+                    Acc
+            end
+        end,
+    {erlang:md5_update(Md5Context, term_to_binary(AllData)), lists:foldl(Fun, [], Data)}.

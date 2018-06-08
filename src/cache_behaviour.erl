@@ -29,6 +29,16 @@ init(Config) when Config#cache_mate.store =:= mnesia ->
 load_file(Config) when Config#cache_mate.db_type =:= mysql ->
     if
         Config#cache_mate.fields =:= none -> ok;
+        Config#cache_mate.store =:= mnesia ->
+            IsSync =
+                case application:get_env(cache, is_sync) of
+                    {ok, true} -> true;
+                    {ok, false} -> Config#cache_mate.cache_copies =:= ram_copies
+                end,
+            if
+                IsSync -> aof_mysql:load_file(Config);
+                true -> ok
+            end;
         true ->
             aof_mysql:load_file(Config)
     end.

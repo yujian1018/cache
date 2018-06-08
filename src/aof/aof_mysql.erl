@@ -45,9 +45,11 @@ tab(Config, Tab, Sel, N, Md5Context) ->
                 <<"select * from ", Tab/binary, " limit ", (integer_to_binary(SIndex))/binary, ", ", (integer_to_binary(?PAGE_SIZE))/binary, ";
           select ", Sel/binary, " from ", Tab/binary, " limit ", (integer_to_binary(SIndex))/binary, ", ", (integer_to_binary(?PAGE_SIZE))/binary, ";">>
         end,
+    ?NOTICE("~p~n", [[Tab, SIndex, N]]),
     case db_mysql:execute(Config#cache_mate.mysql_pool, Sql) of
         [AllData, FieldData] ->
             Len = length(FieldData),
+            ?NOTICE("~p~n", [Len]),
             {NewMd5Context, FieldRecords} = cache_data(Config, AllData, Md5Context, FieldData),
             if
                 Len < ?PAGE_SIZE ->

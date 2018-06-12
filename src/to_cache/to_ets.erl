@@ -23,7 +23,7 @@ set(Config, Items) -> ets:insert(Config#cache_mate.name, Items).
 
 
 cache_data(Config, Md5, FileRecords, AllData) ->
-    Md5 = erl_hash:md5_to_bin(term_to_binary(AllData)),
+    Md5 = erl_hash:md5_bin(term_to_binary(AllData)),
     All = cache_all_data(Config, FileRecords),
     DelIds =
         case All of

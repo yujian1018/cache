@@ -23,7 +23,7 @@ start_link(CacheConfig) ->
 init(CacheConfig) ->
     cache_behaviour:init(CacheConfig),
     cache_behaviour:load_file(CacheConfig),
-    ?INFO("config table:~p load done~n", [CacheConfig#cache_mate.name]),
+    ?INFO("config table:~p load done", [CacheConfig#cache_mate.name]),
     {ok, #{config => CacheConfig}}.
 
 

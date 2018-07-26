@@ -24,4 +24,11 @@ init(Config) ->
 set(_Config, Items) -> [mnesia:dirty_write(Item) || Item <- Items].
 
 
-cache_data(_CacheConfig, _Md5, _FileRecords, _AllData) -> ok.
+cache_data(CacheConfig, _Md5, FileRecords, _AllData) ->
+    if
+        is_function(CacheConfig#cache_mate.callback) ->
+            Records = (CacheConfig#cache_mate.callback)(FileRecords),
+            [mnesia:dirty_write(Record) || Record <- Records];
+        true ->
+            ok
+    end.

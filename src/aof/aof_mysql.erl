@@ -63,8 +63,16 @@ cache_data(Config, AllData, Md5Context, Data) ->
     Fun =
         fun(Item, Acc) ->
             TabRecord = list_to_tuple([Config#cache_mate.name | Item]),
-            TabRecord2 = (Config#cache_mate.rewrite)(TabRecord),
-            TabRecord3 = (Config#cache_mate.verify)(TabRecord2),
+            TabRecord2 =
+                if
+                    is_function(Config#cache_mate.rewrite) -> (Config#cache_mate.rewrite)(TabRecord);
+                    true -> TabRecord
+                end,
+            TabRecord3 =
+                if
+                    is_function(Config#cache_mate.verify) -> (Config#cache_mate.verify)(TabRecord2);
+                    true -> TabRecord2
+                end,
             if
                 is_tuple(TabRecord3) ->
                     cache_behaviour:set(Config, [TabRecord3]),

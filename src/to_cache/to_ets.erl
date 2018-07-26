@@ -16,7 +16,7 @@
 ]).
 
 init(CacheConfig) ->
-    ?ets_new(CacheConfig#cache_mate.name, CacheConfig#cache_mate.key_pos, CacheConfig#cache_mate.type).
+    ?ets_new(CacheConfig#cache_mate.name, CacheConfig#cache_mate.keypos, CacheConfig#cache_mate.type).
 
 
 set(Config, Items) -> ets:insert(Config#cache_mate.name, Items).
@@ -68,7 +68,7 @@ cache_group_data(Config, FileRecords) ->
                     FunFoldl =
                         fun(Record2, NewVO) ->
                             GroupTypeId = element(Index2, Record2),
-                            KeyId2 = element(Config#cache_mate.key_pos, Record2),
+                            KeyId2 = element(Config#cache_mate.keypos, Record2),
                             case lists:keytake({'group', Index2, GroupTypeId}, 2, NewVO) of
                                 false ->
                                     [{Config#cache_mate.name, {'group', Index2, GroupTypeId}, [KeyId2]} | NewVO];

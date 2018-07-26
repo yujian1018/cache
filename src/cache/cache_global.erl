@@ -18,7 +18,7 @@ load_cache() ->
     [
         #cache_mate{
             name = cache_global,
-            key_pos = 1
+            keypos = 1
         }
     ].
 

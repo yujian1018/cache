@@ -13,7 +13,7 @@ load_cache() ->
     [
         #cache_mate{
             name = ?cache_tab_md5,
-            key_pos = 1,
+            keypos = 1,
             priority = -1
         }
     ].

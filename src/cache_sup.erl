@@ -11,9 +11,9 @@
 
 -export([
     start/0,
-    
+
     start_child/1,
-    reload/1, reload/2
+    reload/0, reload/1, reload/2
 ]).
 
 -define(CHILD(I, Type), {I, {I, start_link, []}, permanent, 5000, Type, [I]}).
@@ -54,6 +54,23 @@ start(Apps) ->
 start_child(Mod) ->
     Configs = Mod:load_cache(),
     [supervisor:start_child(?MODULE, ?CHILD(cache_mgr, worker, Config)) || Config <- Configs].
+
+
+reload() ->
+    NewApps =
+        case application:get_env(cache, app_names) of
+            undefined -> [cache];
+            {ok, Apps} -> lists:usort([cache | Apps])
+        end,
+    FunApp =
+        fun(App) ->
+            Mods = erl_file:get_mods(App, ?cache_behaviour),
+            lists:map(
+                fun(Mod) ->
+                    [ reload(Mod, Config#cache_mate.name)||Config <- Mod:load_cache()]
+                end, Mods)
+        end,
+    lists:map(FunApp, NewApps).
 
 
 reload(Module) -> reload(Module, Module).

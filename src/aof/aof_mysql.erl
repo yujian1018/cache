@@ -11,7 +11,10 @@
 
 -define(PAGE_SIZE, 10000).
 
--export([load_file/1]).
+-export([
+    load_file/1,
+    cache_data/4
+]).
 
 load_file(Config) ->
     Tab = atom_to_binary(Config#cache_mate.name, unicode),

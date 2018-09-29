@@ -19,7 +19,7 @@
     cache_copies    = disc_copies :: disc_copies|disc_only_copies|ram_copies,
     fields          = none  :: list(),
 
-    db_type         = mysql :: atom(), %文件类型， mysql、txt、json、xml、excle
+    db_type         = mysql :: atom(), %文件类型， mysql、file
     mysql_pool      = pool_static_1 :: atom(),
 
     rewrite                 :: fun(),    %数据格式重写

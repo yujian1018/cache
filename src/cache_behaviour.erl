@@ -41,7 +41,10 @@ load_file(Config) when Config#cache_mate.db_type =:= mysql ->
             end;
         true ->
             aof_mysql:load_file(Config)
-    end.
+    end;
+
+load_file(Config) when Config#cache_mate.db_type =:= file ->
+    aof_file:load_file(Config).
 
 
 set(Config, Items) ->

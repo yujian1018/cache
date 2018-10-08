@@ -39,7 +39,10 @@ cache_data(Config, _Md5, FileRecords, AllData) ->
     Group = cache_group_data(Config, FileRecords),
     ets:insert(Config#cache_mate.name, lists:flatten([All, Group])),
     ets:delete(Config#cache_mate.name, table_data),
-    ets:insert(Config#cache_mate.name, {Config#cache_mate.name, table_data, AllData}),
+    if
+        Config#cache_mate.all =:= [] -> [];
+        true -> ets:insert(Config#cache_mate.name, {Config#cache_mate.name, table_data, AllData})
+    end,
 
     gen_server:call(?cache_tab_md5, {reset_md5, Config#cache_mate.name, Md5}),
     case DelIds of

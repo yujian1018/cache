@@ -17,7 +17,21 @@
 
 
 init(Config) ->
-    ?mnesia_new(Config#cache_mate.name, Config#cache_mate.cache_copies, Config#cache_mate.type, Config#cache_mate.fields, Config#cache_mate.index).
+    mnesia:start(),
+    {ok, MnesiaDir} = application:get_env(mnesia, dir),
+    case filelib:is_dir(MnesiaDir) of
+        true -> ok;
+        false ->
+            [file:make_dir(I) || I <- erl_file:dirs(MnesiaDir)],
+            mnesia:stop(),
+            mnesia:delete_schema([node()]),
+            mnesia:create_schema([node()]),
+            mnesia:start()
+    end,
+    case ?mnesia_new(Config#cache_mate.name, Config#cache_mate.cache_copies, Config#cache_mate.type, Config#cache_mate.fields, Config#cache_mate.index) of
+        {atomic,ok} -> ok;
+        Err -> ?ERROR("ERROR create mnesia_tab, ~tp~n ERR:~tp", [Config, Err])
+    end.
 
 
 %% @doc 同时插入两张表的情况

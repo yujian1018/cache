@@ -9,7 +9,7 @@
 -include("cache_pub.hrl").
 
 
--define(PAGE_SIZE, 10000).
+-define(PAGE_SIZE, 100000).
 
 -export([
     load_file/1,

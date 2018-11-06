@@ -29,7 +29,7 @@ init(Config) ->
             mnesia:start()
     end,
     case ?mnesia_new(Config#cache_mate.name, Config#cache_mate.cache_copies, Config#cache_mate.type, Config#cache_mate.fields, Config#cache_mate.index) of
-        {atomic,ok} -> ok;
+        {atomic, ok} -> ok;
         Err -> ?ERROR("ERROR create mnesia_tab, ~tp~n ERR:~tp", [Config, Err])
     end.
 

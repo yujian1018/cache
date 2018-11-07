@@ -28,9 +28,9 @@ init(Config) ->
             mnesia:create_schema([node()]),
             mnesia:start()
     end,
-    case ?mnesia_new(Config#cache_mate.name, Config#cache_mate.cache_copies, Config#cache_mate.type, Config#cache_mate.fields, Config#cache_mate.index) of
+    case ?mnesia_new(Config#cache_mate.name, Config#cache_mate.cache_copies, Config#cache_mate.type, Config#cache_mate.fields, []) of
         {atomic, ok} -> ok;
-        Err -> ?ERROR("ERROR create mnesia_tab, ~tp~n ERR:~tp", [Config, Err])
+        Err -> ?WARN("WARN mnesia, ~tp~n ERR:~tp", [Config, Err])
     end.
 
 
@@ -45,4 +45,5 @@ cache_data(CacheConfig, _Md5, FileRecords, _AllData) ->
             [mnesia:dirty_write(Record) || Record <- Records];
         true ->
             ok
-    end.
+    end,
+    [mnesia:add_table_index(CacheConfig#cache_mate.name, Ix) || Ix <- CacheConfig#cache_mate.index].

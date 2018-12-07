@@ -34,7 +34,7 @@ load_file(Config) when Config#cache_mate.db_type =:= mysql ->
             IsSync =
                 case application:get_env(cache, is_sync) of
                     {ok, true} -> true;
-                    {ok, false} -> Config#cache_mate.cache_copies =:= ram_copies
+                    _ -> false
                 end,
             if
                 IsSync -> aof_mysql:load_file(Config);

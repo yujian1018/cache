@@ -12,3 +12,11 @@
 ###todo_list
 
 > * 支持txt,xml,json格式解析,以及excle解析
+
+
+### 重构功能
+
+> * ets 各个application 加载各自的ets，不再使用cache application 加载 防止报错
+> * 支持持久化 mnesia
+> * 支持数据源：RDB，文档
+> * 加载数据
